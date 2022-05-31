@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 void main(){
@@ -26,17 +28,183 @@ class ScientificCalculator extends StatefulWidget {
 
 class _ScientificCalculatorState extends State<ScientificCalculator> {
 
-  String equation = "0";
-  String result = "0";
+  String equation = "0";//"2+3x4+5x(1+3x5+4x2)";
+  String result = "";
   String expression = "";
   double equationFontSize = 38.0;
   double resultFontSize = 48.0;
-
+  bool rad = true;
+  bool deg = false;
+  var infixExpList = [];//['2', '+', '3', 'x', '4', '+', '5', 'x', '(', '1', '+', '3', 'x', '5', '+', '4', 'x', '2', ')'];
   bool isNumeric(String s) {
-    if(s == null) {
+    if (s == null) {
       return false;
     }
-    return double.parse(s) != null;
+    return double.tryParse(s) != null;
+  }
+
+  int prec(String op)
+  {
+    if(op == "@")
+      return 5;
+    else if (op == "^")
+      return 4;
+    else if(op=="%")
+      return 3;
+    else if (op == "÷" || op == "x")
+      return 2;
+    else if (op == "+" || op == "-")
+      return 1;
+    else
+      return -1;
+  }
+
+  dynamic getPostfix(var infixList){
+    var postfixExpList = [];
+    var stack = [];
+    for(int index=0; index < infixList.length; index++){
+      var element = infixList[index];
+      if(isNumeric(element) || element=="sin" || element=="cos" || element=="tan" ||
+        element == "√" || element == "lg" || element == "ln"){
+        postfixExpList.add(element);
+      }
+      else if(element == "(")
+        stack.add("(");
+      else if(element == ")"){
+        while(stack.last != "("){
+          postfixExpList.add(stack.last);
+          stack.removeLast();
+        }
+        stack.removeLast();
+      }
+      else { // operator
+        while(!stack.isEmpty && prec(element) <= prec(stack.last)){
+          if(element == "^" && stack.last == "^")
+            break;
+          else{
+            postfixExpList.add(stack.last);
+            stack.removeLast();
+          }
+        }
+        stack.add(element);
+      }
+    }
+    while(!stack.isEmpty){
+      postfixExpList.add(stack.last);
+      stack.removeLast();
+    }
+    return postfixExpList;
+  }
+
+  bool isDouble(String str){
+    for(int i=0; i<str.length; i++){
+      if(str[i]=='.'){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool isTrigonometric(String str){
+    if(str == "sin") return true;
+    if(str == "cos") return true;
+    if(str == "tan") return true;
+    if(str == "lg") return true;
+    if(str == "ln") return true;
+    return false;
+  }
+
+  dynamic evaluatePostfix(var postfixExp){
+    dynamic rezultat = 0.0;
+    for(int index=0; index<postfixExp.length-2; index++){
+      dynamic a = postfixExp[index];
+      dynamic b = postfixExp[index+1];
+      dynamic op = postfixExp[index+2];
+      print("----postfixExpppp=="); print(postfixExp);
+      if(isNumeric(a) && isNumeric(b) && prec(op)>=1 && prec(op)<5){
+        print("I m heree");
+        dynamic r;
+        if(isDouble(a)){
+          a = double.parse(a);
+        }
+        else a = int.parse(a);
+        if(isDouble(b)){
+          b = double.parse(b);
+        }
+        else b = int.parse(b);
+        print("a="); print(a.runtimeType);
+        print(a);
+        print("b="); print(b.runtimeType);
+        print(b);
+        print("op="); print(op.runtimeType);
+        print(op);
+        if(op == "+"){
+          print("In adunare:");
+          print("r before:"); print(r);
+          r = a + b;
+          print("r after:"); print(r);}
+        else if(op == "-")
+          r = a - b;
+        else if(op == "x")
+          r = a * b;
+        else if(op == "÷")
+          r = a / b;
+        else if(op == "%")
+          r = a % b;
+        else if(op == "^")
+          r = pow(a, b);
+        rezultat = r;
+        postfixExp.removeAt(index);
+        postfixExp.removeAt(index);
+        postfixExp.removeAt(index);
+        postfixExp.insert(index, r.toString());
+        index=-1;
+        print("---rezultat=");
+        print(rezultat);
+      }
+      else if((isTrigonometric(a) || a == "√") && isNumeric(b) && op=="@"){
+        var r;
+        if(isDouble(b)){
+          b = double.parse(b);
+        }
+        else b = int.parse(b);
+        if(a == "sin"){
+          if(deg == true){
+            b = b * pi / 180;
+          }
+          r = sin(b);
+          print("sin r="); print(r);
+        }
+        else if(a == "cos"){
+          r = cos(b);
+        }
+        else if(a == "tan") {
+          r = tan(b);
+        }
+        else if(a == "lg"){
+          r = log(b) / log(10);
+        }
+        else if(a == "ln"){
+          r = log(b);
+        }
+        else if(a == "√"){
+          r = sqrt(b);
+        }
+        rezultat = r;
+        postfixExp.removeAt(index);
+        postfixExp.removeAt(index);
+        postfixExp.removeAt(index);
+        postfixExp.insert(index, r.toString());
+        index=-1;
+      }
+    }
+    print("---rezultat="); print(rezultat);
+    rezultat = num.parse(rezultat.toStringAsFixed(7));
+    int intRezultat = rezultat.round();
+    if (rezultat == intRezultat){
+      return "$intRezultat";
+    }
+    return "$rezultat";
   }
 
   buttonPressed(String buttonText){
@@ -46,16 +214,74 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
         result = "0";
         double equationFontSize = 38.0;
         double resultFontSize = 48.0;
+        infixExpList = [];
       }
       else if(buttonText == "⌫"){
         double equationFontSize = 48.0;
         double resultFontSize = 38.0;
-        equation = equation.substring(0, equation.length-1);
-        if(equation == ""){
-          equation = "0";
+        var lastChr = equation.substring(equation.length-1, equation.length);
+        print(lastChr);
+        if(equation == "" || equation=="0"){
+          return;
         }
-      }
+        else if(
+          lastChr == "." ||
+          isNumeric(lastChr) ||
+          lastChr==")" ||
+          prec(lastChr) > -1 ||
+          lastChr == "√" ||
+          lastChr == "e" ||
+          lastChr == "π" ||
+          equation == "("
+        ) {
+          equation = equation.substring(0, equation.length - 1);
+          infixExpList[infixExpList.length - 1] =
+              "${infixExpList[infixExpList.length - 1]}"
+                  .substring(
+                  0, "${infixExpList[infixExpList.length - 1]}".length - 1);
+          var lastElementLength = (infixExpList[infixExpList.length - 1])
+              .length;
+          print(lastElementLength);
+          if (lastElementLength == 0) {
+            infixExpList.removeLast();
+          }
+        }
+          else if(lastChr == "(" ){
+            if(infixExpList.length >= 3){
+              if(infixExpList[infixExpList.length-2]=="@" && infixExpList[infixExpList.length-3] != "√"){
+                int len = "${infixExpList[infixExpList.length-1]}".length
+                  + "${infixExpList[infixExpList.length-2]}".length
+                  + "${infixExpList[infixExpList.length-3]}".length;
+                print("len=${len}");
+                print("equation=${equation}");
+                equation = equation.substring(0, equation.length-len+1);
+                print("equation after=${equation}");
+                infixExpList.removeLast();
+                infixExpList.removeLast();
+                infixExpList.removeLast();
+              }
+              else {
+                equation = equation.substring(0, equation.length-1);
+                infixExpList.removeLast();
+              }
+            }
+            else if(infixExpList[infixExpList.length-2]=="@" && infixExpList[infixExpList.length-3] == "√"){
+              infixExpList.removeLast();
+            }
+          }
+          else if(lastChr == "√"){
+            infixExpList.removeLast();
+            infixExpList.removeLast();
+          }
+          if(equation == ""){
+            equation = "0";
+          }
+          print("equation len:${equation.length}");
+          print("infix len:${infixExpList.length}");
+        }
       else if(buttonText == "sin"){
+        double equationFontSize = 48.0;
+        double resultFontSize = 38.0;
         var lastChr = equation.substring(equation.length-1, equation.length);
         if(
           !isNumeric(lastChr) &&
@@ -64,7 +290,16 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
               lastChr != "π" &&
               lastChr != "e"
         ){
-          equation = equation + buttonText;
+          equation = equation + buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
+        }
+        else if(equation == "0"){
+          equation = buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
         }
       }
       else if(buttonText == "cos"){
@@ -76,7 +311,16 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "π" &&
             lastChr != "e"
         ){
-          equation = equation + buttonText;
+          equation = equation + buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
+        }
+        else if(equation == "0"){
+          equation = buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
         }
       }
       else if(buttonText == "tan"){
@@ -88,7 +332,16 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "π" &&
             lastChr != "e"
         ){
-          equation = equation + buttonText;
+          equation = equation + buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
+        }
+        else if(equation == "0"){
+          equation = buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
         }
       }
       else if(buttonText == "("){
@@ -102,6 +355,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "e"
         ){
           equation = equation + buttonText;
+          infixExpList.add("(");
         }
       }
       else if(buttonText == ")"){
@@ -118,6 +372,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "^"
         ){
           equation = equation + buttonText;
+          infixExpList.add(")");
         }
       }
       else if(buttonText == "√"){
@@ -127,7 +382,18 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "." &&
             lastChr != ")"
         ){
+          print("infixExpList="); print(infixExpList);
           equation = equation + buttonText;
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          print("infixExpList after="); print(infixExpList);
+        }
+        else if (equation=="0"){
+          print("infixExpList="); print(infixExpList);
+          equation = buttonText;
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          print("infixExpList after="); print(infixExpList);
         }
       }
       else if(buttonText == "%"){
@@ -144,6 +410,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "^"
         ){
           equation = equation + buttonText;
+          infixExpList.add(buttonText);
         }
       }
       else if(buttonText == "÷"){
@@ -160,6 +427,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "^"
         ){
           equation = equation + buttonText;
+          infixExpList.add(buttonText);
         }
       }
       else if(buttonText == "+"){
@@ -176,6 +444,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "^"
         ){
           equation = equation + buttonText;
+          infixExpList.add(buttonText);
         }
       }
       else if(buttonText == "-"){
@@ -194,6 +463,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "."
         ){
           equation = equation + buttonText;
+          infixExpList.add(buttonText);
         }
       }
       else if(buttonText == "x"){
@@ -210,6 +480,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "^"
         ){
           equation = equation + buttonText;
+          infixExpList.add(buttonText);
         }
       }
       else if(buttonText == "lg"){
@@ -221,10 +492,19 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
               lastChr != "e" &&
               lastChr != ")"
         ){
-          equation = equation + buttonText;
+          equation = equation + buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
+        }
+        else if(equation == "0"){
+          equation = buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
         }
       }
-      else if(buttonText == "ln2"){
+      else if(buttonText == "ln"){
         var lastChr = equation.substring(equation.length-1, equation.length);
         if(
           !isNumeric(lastChr) &&
@@ -233,31 +513,47 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
               lastChr != "e" &&
               lastChr != ")"
         ){
-          equation = equation + buttonText;
+          equation = equation + buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
+        }
+        else if(equation == "0"){
+          equation = buttonText + "(";
+          infixExpList.add(buttonText);
+          infixExpList.add("@");
+          infixExpList.add("(");
         }
       }
       else if(buttonText == "x^"){
         var lastChr = equation.substring(equation.length-1, equation.length);
         if(
-        !isNumeric(lastChr) &&
             lastChr != "." &&
-            lastChr != "π" &&
-            lastChr != "e" &&
             lastChr != ")"
         ){
-          equation = equation + buttonText;
+          equation = equation + "^";
+          infixExpList.add("^");
+        }
+        else if(equation == "0"){
+          equation = "^";
+          infixExpList.add("^");
         }
       }
-      else if(buttonText == "π"){
-        var lastChr = equation.substring(equation.length-1, equation.length);
-        if(
+      else if(buttonText == "π") {
+        var lastChr = equation.substring(equation.length - 1, equation.length);
+        if (
         !isNumeric(lastChr) &&
             lastChr != "." &&
             lastChr != "π" &&
             lastChr != "e" &&
             lastChr != ")"
-        ){
+        ) {
           equation = equation + buttonText;
+          infixExpList.add("$pi");
+        }
+        else if (equation == "0") {
+          equation = "$pi";
+          infixExpList.add("$pi");
         }
       }
       else if(buttonText == "e"){
@@ -270,6 +566,11 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != ")"
         ){
           equation = equation + buttonText;
+          infixExpList.add("$e");
+        }
+        else if(equation == "0"){
+          equation = "$e";
+          infixExpList.add("$e");
         }
       }
       else if(buttonText == "0"){
@@ -280,7 +581,17 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
               lastChr != "π" &&
               lastChr != "e"
         ){
-          equation = equation + buttonText;
+          if("${infixExpList[infixExpList.length-1]}" == "0"){
+            return;
+          }
+          else if(isNumeric(lastChr) || lastChr == "."){
+            equation = equation + buttonText;
+            infixExpList[infixExpList.length-1] = "${infixExpList[infixExpList.length-1]}" + buttonText;
+            print(infixExpList);
+          } else {
+            equation = equation + buttonText;
+            infixExpList.add(buttonText);
+          }
         }
       }
       else if(isNumeric(buttonText)){
@@ -290,7 +601,18 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "π" &&
             lastChr != "e"
         ){
-          equation = equation + buttonText;
+          if(equation == "0"){
+            equation = buttonText;
+            infixExpList.add(buttonText);
+          } else if(isNumeric(lastChr) || lastChr == "."){
+            equation = equation + buttonText;
+            infixExpList[infixExpList.length-1] = "${infixExpList[infixExpList.length-1]}" + buttonText;
+            print(infixExpList);
+          }
+          else {
+            equation = equation + buttonText;
+            infixExpList.add(buttonText);
+          }
         }
       }
       else if(buttonText == "."){
@@ -298,12 +620,35 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
         if(
             isNumeric(lastChr)
         ){
-          equation = equation + buttonText;
+          bool gasitPunct = false;
+          String strNumber = "${infixExpList[infixExpList.length-1]}";
+          for(int i=0; i<strNumber.length && gasitPunct==false; i++){
+            if(strNumber[i]=="."){
+              gasitPunct=true;
+            }
+          }
+          if(gasitPunct==false) {
+            equation = equation + buttonText;
+            infixExpList[infixExpList.length - 1] =
+                "${infixExpList[infixExpList.length - 1]}" + buttonText;
+          }
         }
+      }
+      else if(buttonText == "RD"){
+        rad = false;
+        deg = true;
+      }
+      else if(buttonText == "DG"){
+        rad = true;
+        deg = false;
       }
       else if(buttonText == "="){
         double equationFontSize = 38.0;
         double resultFontSize = 48.0;
+        var postfix = List<String>.from(getPostfix(infixExpList));
+        var rezultat = evaluatePostfix(postfix);
+        print("rezultat=" + rezultat);
+        result = rezultat;
       }
       else {
         double equationFontSize = 48.0;
@@ -315,6 +660,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
         }
       }
     });
+    print(infixExpList);
   }
 
   Widget buildButton(String buttonText, double buttonHeight, Color buttonColor){
@@ -367,133 +713,70 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Container(
-                width: MediaQuery.of(context).size.width * 0.2,
+                width: MediaQuery.of(context).size.width * 1,
                 child: Table(
                   children: [
                     TableRow(
                         children: [
                           buildButton("sin", 1, Colors.blue),
+                          buildButton("cos", 1, Colors.blue),
+                          buildButton("tan", 1, Colors.blue),
+                          buildButton("(", 1, Colors.blue),
+                          buildButton(")", 1, Colors.blue)
                         ]
                     ),
                     TableRow(
-                        children: [
-                          buildButton("C", 1, Colors.redAccent),
-                        ]
+                      children: [
+                        buildButton("C", 1, Colors.redAccent),
+                        buildButton("√", 1, Colors.blue),
+                        buildButton("%", 1, Colors.blue),
+                        buildButton("÷", 1, Colors.blue),
+                        buildButton("⌫", 1, Colors.orange)
+                      ]
                     ),
                     TableRow(
                         children: [
                           buildButton("lg", 1, Colors.blue),
+                          buildButton("7", 1, Colors.black54),
+                          buildButton("8", 1, Colors.black54),
+                          buildButton("9", 1, Colors.black54),
+                          buildButton("x", 1, Colors.blue)
                         ]
                     ),
                     TableRow(
                         children: [
-                          buildButton("ln2", 1, Colors.blue),
+                          buildButton("ln", 1, Colors.blue),
+                          buildButton("4", 1, Colors.black54),
+                          buildButton("5", 1, Colors.black54),
+                          buildButton("6", 1, Colors.black54),
+                          buildButton("-", 1, Colors.blue)
                         ]
                     ),
                     TableRow(
                         children: [
                           buildButton("x^", 1, Colors.blue),
+                          buildButton("1", 1, Colors.black54),
+                          buildButton("2", 1, Colors.black54),
+                          buildButton("3", 1, Colors.black54),
+                          buildButton("+", 1, Colors.blue)
                         ]
                     ),
                     TableRow(
                         children: [
                           buildButton("π", 1, Colors.blue),
-                        ]
-                    )
-                  ],
-                ),
-              ),
-              Container(
-                width: MediaQuery.of(context).size.width * .6,
-                child: Table(
-                  children: [
-                    TableRow(
-                        children: [
-                          buildButton("cos", 1, Colors.blue),
-                          buildButton("tan", 1, Colors.blue),
-                          buildButton("(", 1, Colors.blue)
-                        ]
-                    ),
-                    TableRow(
-                      children: [
-                        buildButton("√", 1, Colors.blue),
-                        buildButton("%", 1, Colors.blue),
-                        buildButton("÷", 1, Colors.blue)
-                      ]
-                    ),
-                    TableRow(
-                        children: [
-                          buildButton("7", 1, Colors.black54),
-                          buildButton("8", 1, Colors.black54),
-                          buildButton("9", 1, Colors.black54)
-                        ]
-                    ),
-                    TableRow(
-                        children: [
-                          buildButton("4", 1, Colors.black54),
-                          buildButton("5", 1, Colors.black54),
-                          buildButton("6", 1, Colors.black54)
-                        ]
-                    ),
-                    TableRow(
-                        children: [
-                          buildButton("1", 1, Colors.black54),
-                          buildButton("2", 1, Colors.black54),
-                          buildButton("3", 1, Colors.black54)
-                        ]
-                    ),
-                    TableRow(
-                        children: [
-                          buildButton("e", 1, Colors.blue),
+                          buildButton(rad==true ? "RD" : "DG", 1, Colors.deepPurpleAccent),
                           buildButton("0", 1, Colors.black54),
-                          buildButton(".", 1, Colors.black54)
+                          buildButton(".", 1, Colors.black54),
+                          buildButton("=", 1, Colors.green)
                         ]
                     )
                   ],
                 )
-              ),
-              Container(
-                width: MediaQuery.of(context).size.width * 0.2,
-                child: Table(
-                  children: [
-                    TableRow(
-                        children: [
-                          buildButton(")", 1, Colors.blue),
-                        ]
-                    ),
-                    TableRow(
-                        children: [
-                          buildButton("⌫", 1, Colors.orange),
-                        ]
-                    ),
-                    TableRow(
-                      children: [
-                        buildButton("x", 1, Colors.blue),
-                      ]
-                    ),
-                    TableRow(
-                        children: [
-                          buildButton("-", 1, Colors.blue),
-                        ]
-                    ),
-                    TableRow(
-                        children: [
-                          buildButton("+", 1, Colors.blue),
-                        ]
-                    ),
-                    TableRow(
-                        children: [
-                          buildButton("=", 1, Colors.green),
-                        ]
-                    )
-                  ],
-                ),
               )
             ],
           ),
         ],
       )
-
     );
   }
 }
