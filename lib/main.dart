@@ -35,7 +35,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
   double resultFontSize = 48.0;
   bool rad = true;
   bool deg = false;
-  var infixExpList = [];//['2', '+', '3', 'x', '4', '+', '5', 'x', '(', '1', '+', '3', 'x', '5', '+', '4', 'x', '2', ')'];
+  var infixExpList = ['0'];//['2', '+', '3', 'x', '4', '+', '5', 'x', '(', '1', '+', '3', 'x', '5', '+', '4', 'x', '2', ')'];
   bool isNumeric(String s) {
     if (s == null) {
       return false;
@@ -93,6 +93,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
       postfixExpList.add(stack.last);
       stack.removeLast();
     }
+    print("postfi:"); print(postfixExpList);
     return postfixExpList;
   }
 
@@ -122,7 +123,6 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
       dynamic op = postfixExp[index+2];
       print("----postfixExpppp=="); print(postfixExp);
       if(isNumeric(a) && isNumeric(b) && prec(op)>=1 && prec(op)<5){
-        print("I m heree");
         dynamic r;
         if(isDouble(a)){
           a = double.parse(a);
@@ -132,17 +132,9 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
           b = double.parse(b);
         }
         else b = int.parse(b);
-        print("a="); print(a.runtimeType);
-        print(a);
-        print("b="); print(b.runtimeType);
-        print(b);
-        print("op="); print(op.runtimeType);
-        print(op);
-        if(op == "+"){
-          print("In adunare:");
-          print("r before:"); print(r);
+        if(op == "+") {
           r = a + b;
-          print("r after:"); print(r);}
+        }
         else if(op == "-")
           r = a - b;
         else if(op == "x")
@@ -173,7 +165,6 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             b = b * pi / 180;
           }
           r = sin(b);
-          print("sin r="); print(r);
         }
         else if(a == "cos"){
           r = cos(b);
@@ -211,17 +202,18 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
     setState(() {
       if(buttonText == "C"){
         equation = "0";
-        result = "0";
+        result = "";
         double equationFontSize = 38.0;
         double resultFontSize = 48.0;
-        infixExpList = [];
+        infixExpList = ['0'];
       }
       else if(buttonText == "⌫"){
         double equationFontSize = 48.0;
         double resultFontSize = 38.0;
         var lastChr = equation.substring(equation.length-1, equation.length);
-        print(lastChr);
         if(equation == "" || equation=="0"){
+          equation = "0";
+          infixExpList = ["0"];
           return;
         }
         else if(
@@ -241,7 +233,6 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
                   0, "${infixExpList[infixExpList.length - 1]}".length - 1);
           var lastElementLength = (infixExpList[infixExpList.length - 1])
               .length;
-          print(lastElementLength);
           if (lastElementLength == 0) {
             infixExpList.removeLast();
           }
@@ -252,10 +243,7 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
                 int len = "${infixExpList[infixExpList.length-1]}".length
                   + "${infixExpList[infixExpList.length-2]}".length
                   + "${infixExpList[infixExpList.length-3]}".length;
-                print("len=${len}");
-                print("equation=${equation}");
                 equation = equation.substring(0, equation.length-len+1);
-                print("equation after=${equation}");
                 infixExpList.removeLast();
                 infixExpList.removeLast();
                 infixExpList.removeLast();
@@ -276,8 +264,6 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
           if(equation == ""){
             equation = "0";
           }
-          print("equation len:${equation.length}");
-          print("infix len:${infixExpList.length}");
         }
       else if(buttonText == "sin"){
         double equationFontSize = 48.0;
@@ -382,18 +368,14 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
             lastChr != "." &&
             lastChr != ")"
         ){
-          print("infixExpList="); print(infixExpList);
           equation = equation + buttonText;
           infixExpList.add(buttonText);
           infixExpList.add("@");
-          print("infixExpList after="); print(infixExpList);
         }
         else if (equation=="0"){
-          print("infixExpList="); print(infixExpList);
           equation = buttonText;
           infixExpList.add(buttonText);
           infixExpList.add("@");
-          print("infixExpList after="); print(infixExpList);
         }
       }
       else if(buttonText == "%"){
@@ -529,13 +511,11 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
         var lastChr = equation.substring(equation.length-1, equation.length);
         if(
             lastChr != "." &&
-            lastChr != ")"
+            lastChr != ")" &&
+            equation != "0" &&
+            double.parse(infixExpList[infixExpList.length-1]) != 0.0
         ){
           equation = equation + "^";
-          infixExpList.add("^");
-        }
-        else if(equation == "0"){
-          equation = "^";
           infixExpList.add("^");
         }
       }
@@ -587,7 +567,6 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
           else if(isNumeric(lastChr) || lastChr == "."){
             equation = equation + buttonText;
             infixExpList[infixExpList.length-1] = "${infixExpList[infixExpList.length-1]}" + buttonText;
-            print(infixExpList);
           } else {
             equation = equation + buttonText;
             infixExpList.add(buttonText);
@@ -607,7 +586,6 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
           } else if(isNumeric(lastChr) || lastChr == "."){
             equation = equation + buttonText;
             infixExpList[infixExpList.length-1] = "${infixExpList[infixExpList.length-1]}" + buttonText;
-            print(infixExpList);
           }
           else {
             equation = equation + buttonText;
@@ -699,12 +677,20 @@ class _ScientificCalculatorState extends State<ScientificCalculator> {
           Container(
             alignment: Alignment.centerRight,
             padding: EdgeInsets.fromLTRB(10, 20, 10, 0),
-            child: Text(equation, style: TextStyle(fontSize: equationFontSize), ),
+            //child: Text(equation, style: TextStyle(fontSize: equationFontSize), ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Text(equation, style: TextStyle(fontSize: equationFontSize), ),
+            ),
           ),
           Container(
             alignment: Alignment.centerRight,
             padding: EdgeInsets.fromLTRB(10, 20, 10, 0),
-            child: Text(result, style: TextStyle(fontSize: resultFontSize), ),
+            //child: Text(result, style: TextStyle(fontSize: resultFontSize), ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Text(result, style: TextStyle(fontSize: resultFontSize), ),
+            ),
           ),
           Expanded(
             child: Divider(),
